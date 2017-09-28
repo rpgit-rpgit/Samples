@@ -57,7 +57,7 @@ thread_life_cycle: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_li
 debug:	$(ALL_TARGETS_DEBUG)
 
 thread_life_cycle_DEBUG: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_life_cycle.c
-	$(CC) $(CFLAGS) $(CFLAGS_DEBUG) $(INC) thread_life_cycle.c -o $@
+	$(CC) $(CFLAGS) $(CFLAGS_DEBUG) $(INC) thread_life_cycle.c -lpthread -o $@
 	install -D $@ $(output_appdir)/$@
 
 #libqueue_DEBUG.ar:	queue_DEBUG.o
