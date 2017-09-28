@@ -13,6 +13,13 @@
 
 #define	MSGLEN	50
 
+#define SLEEP_LOOP(usec)														\
+	{																	\
+		while (1) {														\
+			usleep(1000);												\
+		}																\
+	}
+
 
 #define PRINT_THREAD1_ARGS(arg)											\
 	{																	\
@@ -63,6 +70,8 @@
  */
 
 pthread_t tid1, tid2;
+pthread_key_t key;
+pthread_once_t init_done = PTHREAD_ONCE_INIT;
 
 /*
  * thread input argument structures
@@ -112,6 +121,15 @@ int create_threads();
 int cancel_threads();
 int join_threads();
 
+void key_init()
+{
+	pthread_key_create(&key, (void (*)(void *))NULL);
+	
+	printf("********** KEY INIT ************");
+	return;
+}
+
+
 /*
  * function definitions
  */
@@ -128,14 +146,18 @@ void *thread1_start(void *args)
 	PRINT_THREAD_START("Thread 1")	
 	PRINT_THREAD1_ARGS(arg)
 
+	pthread_once(&init_done, key_init);
+
 	ret = (thread1_ret_val_t *)calloc(sizeof(thread1_ret_val_t), 1);
 	ret->retval = 100;
 	strncpy (ret->msg, "Thread1 returning 100", sizeof(ret->msg));
 	
+	SLEEP_LOOP(1000)
+/*
 	while (1) {
 		usleep(1000);
 	}
-
+*/
 	return (ret);				// thread exiting by returning from its start function-
 								//		cleanup handler functions not called
 	pthread_cleanup_pop(0);
@@ -156,10 +178,13 @@ void *thread2_start(void *args)
 	PRINT_THREAD_START("Thread 2")	
 	PRINT_THREAD2_ARGS(arg)
 
+	pthread_once(&init_done, key_init);
+
 	ret = (thread2_ret_val_t *)calloc(sizeof(thread2_ret_val_t), 1);
 	ret->retval = 200;
 	strncpy (ret->msg, "Thread2 returning 200", sizeof(ret->msg));
 
+	SLEEP_LOOP(1000)
 	pthread_exit (ret);			// thread exiting through pthread_exit- 
 								// 		cleanup handler functions executed
 
@@ -312,6 +337,8 @@ int main(int argc, char *argv[])
 {
 	int err;
 
+	pthread_key_create(&key, (void *)NULL);
+	
 	PROG_START
 	PRINTARGS(argc, argv)
 
