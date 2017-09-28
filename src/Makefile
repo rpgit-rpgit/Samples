@@ -27,8 +27,8 @@ ALL_APPS_DEBUG=thread_life_cycle_DEBUG
 
 all:	$(ALL_TARGETS)
 
-thread_life_cycle: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_life_cycle.c
-	$(CC) $(CFLAGS) $(INC) thread_life_cycle.c -lpthread -o $@
+thread_life_cycle: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_life_cycle.c tlc_cleanup.c
+	$(CC) $(CFLAGS) $(INC) thread_life_cycle.c tlc_cleanup.c -lpthread -o $@
 	install -D $@ $(output_appdir)/$@
 
 #libqueue.ar:	queue.o
@@ -56,8 +56,8 @@ thread_life_cycle: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_li
 
 debug:	$(ALL_TARGETS_DEBUG)
 
-thread_life_cycle_DEBUG: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_life_cycle.c
-	$(CC) $(CFLAGS) $(CFLAGS_DEBUG) $(INC) thread_life_cycle.c -lpthread -o $@
+thread_life_cycle_DEBUG: $(top_makefile) Makefile $(common_inc_dir)/common.h thread_life_cycle.c tlc_cleanup.c
+	$(CC) $(CFLAGS) $(CFLAGS_DEBUG) $(INC) thread_life_cycle.c tlc_cleanup.c -lpthread -o $@
 	install -D $@ $(output_appdir)/$@
 
 #libqueue_DEBUG.ar:	queue_DEBUG.o

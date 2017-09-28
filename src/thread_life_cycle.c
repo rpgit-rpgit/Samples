@@ -4,69 +4,11 @@
 #include<errno.h>
 #include<pthread.h>
 
+#include"tlc.h"
 #include<common.h>
-//#include"../../git_projects/common_base/inc/common.h"
 
 /*
- * Macro definitions
- */
-
-#define	MSGLEN	50
-
-#define SLEEP_LOOP(usec)														\
-	{																	\
-		while (1) {														\
-			usleep(1000);												\
-		}																\
-	}
-
-
-#define PRINT_THREAD1_ARGS(arg)											\
-	{																	\
-		printf(FMT "INPUT ARGS\n\ti=%d\tmsg='%s'\n",					\
-			FMTVAR, arg->i, arg->msg);									\
-	}
-
-#define PRINT_THREAD2_ARGS(arg)											\
-	{																	\
-		printf(FMT "INPUT ARGS\n\tj=%d\tmsg='%s'\n",					\
-			FMTVAR, arg->j, arg->msg);									\
-	}
-
-#define PRINT_THREAD1_RET(arg)											\
-	{																	\
-		if (arg == PTHREAD_CANCELED) {									\
-			printf(FMT "Thread1 return by cancelation\n", FMTVAR);		\
-		} else {														\
-			printf(FMT "Thread1 Return Values\n\tretval=%d\tmsg='%s'\n",\
-				FMTVAR, arg->retval, arg->msg);							\
-		}																\
-	}
-
-#define PRINT_THREAD2_RET(arg)											\
-	{																	\
-		if (arg == PTHREAD_CANCELED) {									\
-			printf(FMT "Thread2 return by cancelation\n", FMTVAR);		\
-		} else {														\
-			printf(FMT "Thread2 Return Values\n\tretval=%d\tmsg='%s'\n",\
-				FMTVAR, arg->retval, arg->msg);							\
-		}																\
-	}
-
-/*
-#define PRINT_THREAD2_RET(arg)											\
-	{																	\
-		printf(FMT "Thread2 Return Values\n\tretval=%d\tmsg='%s'\n",	\
-			FMTVAR, arg->retval, arg->msg);								\
-	}
-*/
-#define PRINT_THREAD_CANCELED											\
-	{																	\
-		printf(FMT "Thread returned upon Cancelation\n", FMTVAR);		\
-	}
-
-/*
- * Global definitions
+ * Global variable definitions
  */
 
 pthread_t tid1, tid2;
@@ -74,66 +16,29 @@ pthread_key_t key;
 pthread_once_t init_done = PTHREAD_ONCE_INIT;
 
 /*
- * thread input argument structures
+ * function definitions
  */
-
-typedef struct thread1_args {
-	int i;
-	char msg[MSGLEN];
-} thread1_args_t;
-
-typedef struct thread2_args {
-	int j;
-	char msg[MSGLEN];
-} thread2_args_t;
-
-/*
- * thread return value structures
- */
-
-typedef struct thread1_ret_val {
-	int retval;
-	char msg[MSGLEN];
-} thread1_ret_val_t;
-
-typedef struct thread2_ret_val {
-	int retval;
-	char msg[MSGLEN];
-} thread2_ret_val_t;
-
-
-/*
- * function declarations
- */
-
-void *thread1_start(void *args);
-void *thread2_start(void *args);
-
-void thread1_cleanup1(void *args);
-void thread1_cleanup2(void *args);
-void thread1_cleanup3(void *args);
-
-void thread2_cleanup1(void *args);
-void thread2_cleanup2(void *args);
-void thread2_cleanup3(void *args);
-
-int create_threads();
-int cancel_threads();
-int join_threads();
 
 void key_init()
 {
 	pthread_key_create(&key, (void (*)(void *))NULL);
 	
-	printf("********** KEY INIT ************");
+	printf("********** KEY INIT DONE ************");
 	return;
 }
 
+void set_private_data(char *data)
+{
+	pthread_setspecific(key, (void *)data); 
+	return;
+}
 
-/*
- * function definitions
- */
-
+void print_private_data()
+{
+	PRINT("%s", (char *)pthread_getspecific(key)); 
+	return;
+}
+	
 void *thread1_start(void *args)
 {
 	thread1_args_t *arg = args;
@@ -147,17 +52,15 @@ void *thread1_start(void *args)
 	PRINT_THREAD1_ARGS(arg)
 
 	pthread_once(&init_done, key_init);
+	set_private_data("++++++   THREAD 1    ++++++");
+	print_private_data();
 
 	ret = (thread1_ret_val_t *)calloc(sizeof(thread1_ret_val_t), 1);
 	ret->retval = 100;
 	strncpy (ret->msg, "Thread1 returning 100", sizeof(ret->msg));
 	
 	SLEEP_LOOP(1000)
-/*
-	while (1) {
-		usleep(1000);
-	}
-*/
+
 	return (ret);				// thread exiting by returning from its start function-
 								//		cleanup handler functions not called
 	pthread_cleanup_pop(0);
@@ -179,6 +82,8 @@ void *thread2_start(void *args)
 	PRINT_THREAD2_ARGS(arg)
 
 	pthread_once(&init_done, key_init);
+	set_private_data("++++++   THREAD 2    ++++++");
+	print_private_data();
 
 	ret = (thread2_ret_val_t *)calloc(sizeof(thread2_ret_val_t), 1);
 	ret->retval = 200;
@@ -191,42 +96,6 @@ void *thread2_start(void *args)
 	pthread_cleanup_pop(0);
 	pthread_cleanup_pop(0);
 	pthread_cleanup_pop(0);
-}
-
-void thread1_cleanup1(void *args)
-{
-	PRINT_FUNC_ENTERED
-	return;
-}
-
-void thread1_cleanup2(void *args)
-{
-	PRINT_FUNC_ENTERED
-	return;
-}
-
-void thread1_cleanup3(void *args)
-{
-	PRINT_FUNC_ENTERED
-	return;
-}
-
-void thread2_cleanup1(void *args)
-{
-	PRINT_FUNC_ENTERED
-	return;
-}
-
-void thread2_cleanup2(void *args)
-{
-	PRINT_FUNC_ENTERED
-	return;
-}
-
-void thread2_cleanup3(void *args)
-{
-	PRINT_FUNC_ENTERED
-	return;
 }
 
 /*
@@ -260,7 +129,6 @@ int create_threads()
 		PRINT_ERR("Error allocating memory", errno)
 		return RC_FAILURE;
 	}
-
 
 	/* Create Thread 1 */
 	//	SET_THREAD_ATTR(attr);
@@ -346,6 +214,10 @@ int main(int argc, char *argv[])
 	if ((err = create_threads()) != RC_SUCCESS) {
 		EXIT(EXC_ERR1);
 	} 
+	pthread_once(&init_done, key_init);
+	
+	set_private_data("++++++   ROOT THREAD    ++++++");
+	print_private_data();
 	
 	// Cancel threads
 	getchar();
